@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictation</title>
+</head>
+<style>
+    .log2 {
+        position: relative;
+        height: 200px;
+        width: 90%;
+        left: 5%;
+        top: 5%;
+        border-radius: 5px;
+        border: 5px solid silver;
+        margin: 0;
+        background-color: azure;
+    }
+
+    .select {
+        position: relative;
+        height: 200px;
+        left: 2%;
+        width: 96%;
+        top: 20px;
+        border-radius: 0;
+        border: 5px solid rgb(176, 250, 250);
+        background-color: #ffffff;
+    }
+
+    .select>* {
+        margin: 5px;
+    }
+
+    .dictationArea {
+        position: relative;
+        padding: 0;
+        margin: 0;
+        border: 3px solid gray;
+        background-color: beige;
+        top: 30px;
+        width: 96%;
+        left: 2%;
+        right: 2%;
+        height: 350px;
+        display: none;
+    }
+
+    .wordList {
+        margin: 0;
+        left: 0;
+        width: 100%;
+        position: relative;
+        border: 1px solid rgb(255, 57, 245);
+        height: 80%;
+    }
+
+    .inputDiv {
+        position: relative;
+        border: 1px solid rgb(74, 77, 255);
+        width: 100%;
+        left: 0;
+        top: 10px;
+        height: 20%;
+    }
+
+    .answerCheck {
+        border: 1px solid yellowgreen;
+        position: relative;
+        top: 10px;
+        width: 100%;
+        left: 0;
+        height: 10px;
+        display: none;
+    }
+</style>
+
+<body>
+    <div class="log2">
+        <div class="log"></div>
+        <input value="" id="input" style="margin: 0;position: absolute;bottom: 5px;left: 5px;width: 70%;">
+        <button
+            onclick='var value =document.getElementById("input").value; htmlConsole.log(new Date().toLocaleString()+"&#62; "+ (value.split(" ")[0]=="eval"?eval("try{"+value.substring(5,1000)+"}catch(err){if(err){htmlConsole.log(getTime()+\">\"+String(err))}}"):value))'
+            style="position: absolute;right: 5px;bottom: 5px;">click</button>
+
+    </div>
+    <div class="select"></div>
+    <div class="dictationArea">
+        <div class="wordList"></div>
+        <div class="inputDiv">
+            <input class="answerInput" value="">
+            <button onclick="nextOne()">click</button>
+        </div>
+    </div>
+    <div class="answerCheck">
+
+    </div>
+
+</body>
+<script src="../words.js"></script>
+<script>
+
+    class logger {
+        constructor(element, fontLabel, maxCount, logHeight) {
+            this.element = element;
+            this.history = [];
+            this.fontLabel = fontLabel;
+            this.maxCount = maxCount == undefined ? 5 : maxCount;
+            this.logHeight = logHeight == undefined ? 30 : logHeight;
+            element.style.height = maxCount * logHeight + "px";
+        }
+        clear() {
+            this.element.innerHTML = "";
+        }
+        log(str) {
+            this.history.push(str);
+            this.refresh();
+        }
+        refresh() {
+            var innerhtml = "";
+            for (var i = this.history.length - this.maxCount < 0 ? 0 : this.history.length - this.maxCount; i < this.history.length; i++) {
+                innerhtml += `<${this.fontLabel} style="margin:5px;">${this.history[i]}</${this.fontLabel}>\n`;
+            }
+            this.element.innerHTML = innerhtml;
+        }
+        clearAll() {
+            this.history = [];
+            this.clear();
+        }
+    }
+
+    var path = "";
+    var selections = [];
+    var dictationArr = [];
+    var dictationArea = document.getElementsByClassName("dictationArea")[0];
+    var wordCount = 99999;
+    var myAnswer = [];
+    var dictationIndex = 0;
+    var answerInput = document.getElementsByClassName("answerInput")[0];
+    // var words = {
+    //     property: { name: "单词表", type: "list", enable: true },
+    //     mc: {
+    //         property: { name: "Mc", type: "list", enable: true },
+    //         word: {
+    //             property: { name: "McWords", type: "list", enable: true },
+    //             command:{ 
+    //               property: { name: "Commands", type: "word", enable: true },
+    //               value:[{chs:["创造模式","调创造"],eng:"/gamemode 1"},{chs:["设置重生点","设置出生点","设置出生地"],eng:"/spawnpoint"},{chs:["清除背包"],eng:"/clear"},{chs:["给予药水效果","给予药效"],eng:"/effect"}]
+    //             },
+    //             items: {
+    //                 property: { name: "Items", type: "word", enable: true },
+    //                 value: [{chs:["铁锭","肥皂"],eng:"iron_ingot"},{chs:["命令方块","命令块","指令方块"],eng:"command_block"},{chs:["钻石"],eng:"diamond"},{chs:["基岩"],eng:"bedrock"},{chs:["床"],eng:"bed"}]
+    //             }
+    //         },
+    //         sentence: {
+    //             property: { name: "句子", type: "sentence", enable: true },
+    //             value: [{chs:["你好,世界"],eng:"hello,world"}]
+    //         },
+    //         test:{
+    //             property: { name: "测试", type: "sentence", enable: false },
+    //             value: []
+    //         }
+    //     }
+    // }
+    function getTime() { return new Date().toLocaleString() }
+    function randomNum(minNum, maxNum) {
+        switch (arguments.length) {
+            case 1:
+                return parseInt(Math.random() * minNum + 1, 10);
+                break;
+            case 2:
+                return parseInt(Math.random() * (maxNum - minNum + 1) + minNum, 10);
+                break;
+            default:
+                return 0;
+                break;
+        }
+    }
+    function selectList(index) {
+        var arr = index.split(">");
+        var evalStr = arr[0];
+        for (var i = 1; i < arr.length; i++) {
+            evalStr += `["${arr[i]}"]`;
+        }
+        selections.push(eval(evalStr));
+    }
+    function getWordPath(path, json, jsonPath) {
+        var elementsInJson = [];
+        var property = json.property;
+        if (property.enable) {
+            if (property.type == "list") {
+                for (var i in json) {
+                    if (i != "property") {
+                        elementsInJson.push(i);
+                    }
+                }
+                console.log(elementsInJson);
+                for (var i = 0; i < elementsInJson.length; i++) {
+                    getWordPath(path + ">" + property.name, json[elementsInJson[i]], jsonPath + ">" + elementsInJson[i]);
+                }
+            } else {
+                wordSelect.log(`<h3 onclick='selectList("${jsonPath}");htmlConsole.log("成功选择了: ${path}>${property.name}")'>${path}>${property.name}</h3>`);
+                // htmlConsole.log(jsonPath);
+            }
+        }
+    }
+    function randomSort(arr) {
+        for (var i = 0; i < arr.length; i++) {
+            var random = randomNum(0, arr.length - 1);
+            var temp = arr[i];
+            arr[i] = arr[random];
+            arr[random] = temp;
+        }
+    }
+    function start() {
+        if (selections.length == 0) {
+            htmlConsole.log("您还没有进行选择.");
+        } else {
+            htmlConsole.log("正在加载...");
+            for (var i = 0; i < selections.length; i++) {
+                var word = selections[i].value
+                for (var r = 0; r < word.length; r++) {
+                    dictationArr.push({ type: selections[i].property.type, eng: word[r].eng, chs: word[r].chs.length > 1 ? word[r].chs[randomNum(0, word[r].chs.length - 1)] : word[r].chs[0] });
+                }
+            }
+            randomSort(dictationArr);
+            var deleteIndex = wordCount > dictationArr.length ? parseInt(dictationArr.length / 2) : wordCount;
+            htmlConsole.log("ArrarLength: " + dictationArr.length + ", DeleteIndex: " + deleteIndex);
+            dictationArr.splice(deleteIndex, dictationArr.length - 1);
+            dictationArea.style.display = "block";
+            wordSelect.element.style.display = "none";
+            wordList.log(`${getTime()}>${dictationArr[dictationIndex].chs} (${dictationIndex + 1}/${dictationArr.length})`);
+        }
+    }
+    function nextOne() {
+        myAnswer[dictationIndex] = answerInput.value;
+        dictationIndex++;
+        if (dictationIndex == dictationArr.length) {
+            // ...
+            htmlConsole.log("ok.");
+            dictationArea.style.display = "none";
+            var answerCheck = new logger(document.getElementsByClassName("answerCheck")[0], "h3", dictationArr.length+6, 30);
+            answerCheck.log("My Answer---Right Answer");
+            answerCheck.element.style.display = "block";
+            var rightCount = 0;
+            var wrongAnswer=[];
+            for (var i = 0; i < dictationArr.length; i++) {
+                answerCheck.log(myAnswer[i] + " --- " + dictationArr[i].eng);
+                if (myAnswer[i] == dictationArr[i].eng) { 
+                    rightCount++ 
+                }else{
+                    wrongAnswer.push(myAnswer[i]+"("+dictationArr[i].eng+", "+dictationArr[i].chs+")");
+                }
+            }
+            var allWords=""
+            for(var i=0;i<dictationArr.length;i++){
+                allWords+=`${i+1}. ${dictationArr[i].eng}(${dictationArr[i].chs})&#160;&#160;&#160;`;
+            }
+            answerCheck.log(`Right: ${rightCount}/${dictationArr.length}`);
+            answerCheck.log("AllAnswers: "+allWords);
+            answerCheck.log("WrongAnswers: "+wrongAnswer.toString());
+            answerCheck.log(`<h2 onclick="location.reload()" style="margin:0;">---Click me to restart.---</h2>`);
+        } else {
+            wordList.log(`${getTime()}>${dictationArr[dictationIndex].chs} (${dictationIndex + 1}/${dictationArr.length})`);
+        }
+        answerInput.value = "";
+    }
+    var htmlConsole = new logger(document.getElementsByClassName("log")[0], "h3", 5, 100);
+    var wordSelect = new logger(document.getElementsByClassName("select")[0], "h3", 10, 30);
+    var wordList = new logger(document.getElementsByClassName("wordList")[0], "h3", 5, 50);
+    wordSelect.log("请选择范围 <h3 onclick=\"start()\" style=\"display: inline\">选择完成后点我开始.</h3>&#160;&#160;<h3 style=\"display: inline\" onclick=\'selections=[];dictationArr=[];htmlConsole.log(\"已重置.\")\'>点我重置.</h3>");
+    htmlConsole.log(getTime() + ">正在加载词库(\"./words.js\")...");
+    htmlConsole.log(getTime()+">执行eval [命令] 以调试.");
+    getWordPath("words.js", words, "words");
+    // wordSelect.element.style.display="block";
+
+</script>
+
+</html>
