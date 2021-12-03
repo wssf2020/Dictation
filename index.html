@@ -272,7 +272,7 @@
     var wordSelect = new logger(document.getElementsByClassName("select")[0], "h3", 10, 30);
     var wordList = new logger(document.getElementsByClassName("wordList")[0], "h3", 5, 50);
     wordSelect.log("请选择范围 <h3 onclick=\"start()\" style=\"display: inline\">选择完成后点我开始.</h3>&#160;&#160;<h3 style=\"display: inline\" onclick=\'selections=[];dictationArr=[];htmlConsole.log(\"已重置.\")\'>点我重置.</h3>");
-    htmlConsole.log(getTime() + ">正在加载词库(\"./words.js\")...");
+    htmlConsole.log(getTime() + ">正在加载词库(\"./Dictation/words.js\")...");
     htmlConsole.log(getTime()+">执行eval [命令] 以调试.");
     getWordPath("words.js", words, "words");
     // wordSelect.element.style.display="block";
